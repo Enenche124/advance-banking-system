@@ -3,7 +3,7 @@ package com.apostle.dtos.requests;
 import java.math.BigDecimal;
 
 public record DepositRequest(
-        Long receiverId,
+        String receiverAccountNumber,
         BigDecimal amount,
         String note
 ) { }

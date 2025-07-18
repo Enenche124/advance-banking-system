@@ -1,35 +1,34 @@
 package com.apostle.data.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 
-@Entity
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Document(collection = "bank_accounts")
 public class BankAccount {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(unique = true, nullable = false, length = 10)
+    @Indexed(unique = true)
     private String accountNumber;
 
     private String name;
-    @Column(nullable = false)
     private BigDecimal balance;
 
-    @Enumerated(EnumType.STRING)
     private AccountType accountType;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+
     private User user;
 }

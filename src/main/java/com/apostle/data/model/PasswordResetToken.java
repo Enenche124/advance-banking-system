@@ -1,17 +1,16 @@
 package com.apostle.data.model;
 
-import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table(name = "password_reset_tokens")
+@Document(collection = "password_reset_tokens")
 public class PasswordResetToken {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String token;
 
@@ -19,6 +18,5 @@ public class PasswordResetToken {
 
     private boolean used = false;
 
-    @ManyToOne
     private User user;
 }

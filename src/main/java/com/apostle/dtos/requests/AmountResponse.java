@@ -7,6 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record AmountResponse(
-        @NotNull Long accountId,
+        @NotNull String accountId,
         @Positive @Digits(integer = 8, fraction = 2) BigDecimal amount
 ) { }

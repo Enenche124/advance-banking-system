@@ -3,7 +3,6 @@ package com.apostle.controllers;
 import com.apostle.dtos.requests.AddAccountRequest;
 import com.apostle.dtos.responses.BalanceResponse;
 import com.apostle.services.BankAccountService;
-import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,14 +19,14 @@ public class BankAccountController {
     @PostMapping("/bank-account")
     public ResponseEntity<?> createBankAccount(@RequestBody AddAccountRequest addAccountRequest){
         try {
-            return ResponseEntity.ok(bankAccountService.createAccount(addAccountRequest));
+            return ResponseEntity.ok(bankAccountService.addSubAccountForCurrentUser(addAccountRequest));
         }catch (Exception exception){
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
     }
 
     @GetMapping("/balance/{accountId}")
-    public ResponseEntity<?> getBalance(@PathVariable @Min(1) Long accountId) {
+    public ResponseEntity<?> getBalance(@PathVariable  String accountId) {
         BalanceResponse response = bankAccountService.getBalance(accountId);
         return ResponseEntity.ok(response);
     }

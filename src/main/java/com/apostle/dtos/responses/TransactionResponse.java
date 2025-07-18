@@ -7,14 +7,15 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record TransactionResponse (
-        Long transactionId,
-        Long sender,
-        Long receiver,
+        String  transactionId,
+        String sender,
+        String receiver,
         BigDecimal amount,
         TransactionType type,
         TransactionStatus status,
         String note,
-        LocalDateTime timeStamp
+        LocalDateTime timeStamp,
+        String receiverAccountNumber
 
 
 ) {}

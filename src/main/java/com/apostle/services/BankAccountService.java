@@ -11,13 +11,19 @@ import java.math.BigDecimal;
 
 public interface BankAccountService {
     BankAccount getSystemAccount();
+
     BankAccount createAccountForUser(User user, AccountType accountType);
-    AddAccountResponse createAccount(AddAccountRequest addAccountRequest);
-    BalanceResponse getBalance(Long accountId);
-    void credit(Long accountId, BigDecimal amount);
-    void debit(Long accountId, BigDecimal amount);
-    BankAccount getAccountById(Long accountId);
 
+    AddAccountResponse addSubAccountForCurrentUser(AddAccountRequest addAccountRequest);
 
+    BalanceResponse getBalance(String accountNumber);
 
+    void credit(String accountNumber, BigDecimal amount);
+
+    void debit(String accountNumber, BigDecimal amount);
+
+//    BankAccount getAccountById(String accountId);
+
+    BankAccount getAccountByAccountNumber(String accountNumber); // ✅ optional, for reuse
 }
+

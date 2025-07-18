@@ -16,7 +16,7 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/upload-photo")
-    public ResponseEntity<String> uploadProfilePicture(@PathVariable Long userId,
+    public ResponseEntity<String> uploadProfilePicture(@PathVariable String  userId,
                                                        @RequestParam("file") MultipartFile file) {
         String imageUrl = userService.uploadProfilePicture(userId, file);
         return ResponseEntity.ok(imageUrl);

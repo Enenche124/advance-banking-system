@@ -43,7 +43,7 @@ public class PasswordRecoveryServiceImplTest {
     @BeforeEach
     public void setUp() {
         passwordResetTokenRepository.deleteAll();
-//        userRepository.deleteAll();
+        userRepository.deleteAll();
 
     }
 

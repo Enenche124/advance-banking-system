@@ -11,6 +11,6 @@ import java.util.List;
 public interface TransactionService {
     TransactionResponse deposit(DepositRequest request);
     TransactionResponse transfer(SendMoneyRequest request);
-    List<TransactionResponse> getTransactionsForAccount(Long accountId);
-    TransactionResponse getTransactionById(Long transactionId);
+    List<TransactionResponse> getTransactionsForAccount(String accountId);
+    TransactionResponse getTransactionById(String  transactionId);
 }

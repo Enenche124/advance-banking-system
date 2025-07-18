@@ -24,7 +24,7 @@ import static com.apostle.utils.Mapper.mapToRegisterRequest;
 
 
 @Validated
-@Service
+@Service("authenticationService")
 public class AuthenticationServiceImpl implements AuthenticationService{
 
     private final Validator validator;

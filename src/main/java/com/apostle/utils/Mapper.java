@@ -3,6 +3,7 @@ package com.apostle.utils;
 import com.apostle.data.model.Role;
 import com.apostle.data.model.User;
 import com.apostle.dtos.requests.RegisterRequest;
+import com.apostle.dtos.responses.TransactionResponse;
 
 public class Mapper {
 
@@ -14,6 +15,8 @@ public class Mapper {
         user.setRole(Role.CUSTOMER);
         return user;
     }
+
+//    public static TransactionResponse mapToTransactionResponse(TransactionResponse transactionResponse)
 
 //    public static RegisterResponses mapToRegisterResponses() {
 //        RegisterResponses registerResponses = new RegisterResponses();

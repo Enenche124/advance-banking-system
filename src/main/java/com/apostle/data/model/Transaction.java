@@ -1,47 +1,37 @@
 package com.apostle.data.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
+
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "transactions")
+@Document
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Transaction {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long transactionId;
+    private String transactionId;
 
-    @Column(name = "sender_id", insertable = false, updatable = false)
-    private Long senderId;
+    private String senderAccountId;
+    private String receiverAccountId;
 
-    @Column(name = "receiver_id", insertable = false, updatable = false)
-    private Long receiverId;
+    private String senderAccountNumber;
+    private String receiverAccountNumber;
 
-    @ManyToOne
-    @JoinColumn(name = "sender_id", referencedColumnName = "id", nullable = false)
-    private BankAccount sender;
-
-    @ManyToOne
-    @JoinColumn(name = "receiver_id", referencedColumnName = "id", nullable = false)
-    private BankAccount receiver;
-
-    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
     private TransactionStatus status;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 16)
     private TransactionType type;
 
-    @Column(length = 255)
     private String note;
 
-    @Column(nullable = false)
+    @CreatedDate
     private LocalDateTime timestamp;
 }

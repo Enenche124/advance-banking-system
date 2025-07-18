@@ -17,7 +17,7 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
-    public String uploadProfilePicture(Long userId, MultipartFile file) {
+    public String uploadProfilePicture(String userId, MultipartFile file) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 

@@ -8,8 +8,9 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record SendMoneyRequest (
-    @NotNull Long senderId,
-    @NotNull Long receiverId,
-    @Positive @Digits(integer = 17,fraction = 2) BigDecimal amount,
-    @Size(max = 255) String note
-){}
+        @NotNull String senderAccountNumber,
+        @NotNull String receiverAccountNumber,
+        @NotNull @Positive @Digits(integer = 17, fraction = 2) BigDecimal amount,
+        @Size(max = 255) String note
+) {}
+

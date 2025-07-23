@@ -35,8 +35,10 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/user/**").permitAll()
-                        .requestMatchers("/api/transactions/**").permitAll()
+//                        .requestMatchers("/api/v1/user/**").permitAll()
+//                        .requestMatchers("/api/v1/transactions/**").permitAll()
+                        .requestMatchers("/api/v1/user/**").hasRole("CUSTOMER")
+                        .requestMatchers("/api/v1/transactions/**").hasRole("CUSTOMER")
                         .anyRequest().authenticated()
                 ).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(this.jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -50,8 +52,10 @@ public class SecurityConfiguration {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://127.0.0.1:5500");
-        config.addAllowedOrigin("http://localhost:5252");
-        config.addAllowedHeader("*");
+        config.addAllowedOrigin("http://localhost:8062");
+        config.addAllowedHeader("Authorization");
+        config.addAllowedHeader("Content-Type");
+//        config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         source.registerCorsConfiguration("/**", config);
         return source;

@@ -9,15 +9,23 @@ import com.apostle.dtos.requests.DepositRequest;
 import com.apostle.dtos.requests.SendMoneyRequest;
 import com.apostle.dtos.responses.TransactionResponse;
 import com.apostle.exceptions.TransactionNotFoundException;
+import org.springframework.dao.TransientDataAccessException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import  org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +36,11 @@ public class TransactionServiceImpl implements TransactionService {
 
 
     @Override
+    @Retryable(
+            value = {TransientDataAccessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public TransactionResponse deposit(DepositRequest request) {
         bankService.credit(request.receiverAccountNumber(), request.amount());
 
@@ -44,15 +57,22 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setStatus(TransactionStatus.SUCCESS);
         transaction.setNote(request.note());
         transaction.setTimestamp(LocalDateTime.now());
+        transaction.setTransactionReference(generateTransactionReference());
 
         transactionRepo.save(transaction);
 
-        return mapToResponse(transaction);
+        return mapToTransactionResponse(transaction);
     }
 
 
     @Override
     @Transactional
+    @Retryable(
+            value = {TransientDataAccessException.class,
+            ObjectOptimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public TransactionResponse transfer(SendMoneyRequest request) {
         validateTransferRequest(request);
 
@@ -70,34 +90,36 @@ public class TransactionServiceImpl implements TransactionService {
                 receiverAccount,
                 request.amount(),
                 TransactionType.DEBIT,
-                "Transfer to " + receiverAccount.getAccountNumber() + ": " + note,
-                now
+                "Transfer to " + receiverAccount.getName() + ": " + note,
+                now,
+                generateTransactionReference()
         );
 
         Transaction receiverTx = createTransaction(
-                senderAccount,
                 receiverAccount,
+                senderAccount,
                 request.amount(),
                 TransactionType.CREDIT,
-                "Received from " + senderAccount.getAccountNumber() + ": " + note,
-                now
+                "Received from " + senderAccount.getName() + ": " + note,
+                now,
+                generateTransactionReference()
         );
+
 
         transactionRepo.save(senderTx);
         transactionRepo.save(receiverTx);
 
-        return mapToResponse(senderTx);
+        return mapToTransactionResponse(senderTx);
     }
 
 
-
-
     @Override
-    public List<TransactionResponse> getTransactionsForAccount(String  accountId) {
-       List<Transaction> transactions = transactionRepo.findAllBySenderAccountIdOrReceiverAccountId(accountId,accountId);
-
+    public List<TransactionResponse> getTransactionsForAccount(String accountId, LocalDateTime start, LocalDateTime end, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Transaction> transactions = transactionRepo.findTransactionsWithinDateBySenderOrReceiverWithType(
+                accountId, TransactionType.DEBIT, accountId, TransactionType.CREDIT, start, end, pageable);
         return transactions.stream()
-                .map(this::mapToResponse)
+                .map(t -> new TransactionResponse(t.getTransactionReference(), t.getAmount(), t.getType(), t.getStatus(), t.getNote(), t.getTimestamp(), bankService.getAccountByAccountNumber(t.getReceiverAccountNumber()).getName() ) )
                 .sorted(Comparator.comparing(TransactionResponse::timeStamp).reversed())
                 .toList();
     }
@@ -106,21 +128,20 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionResponse getTransactionById(String  transactionId) {
         Transaction transaction = transactionRepo.findById(transactionId).orElseThrow(() -> new TransactionNotFoundException("Transaction not found"));
-        return mapToResponse(transaction);
+        return mapToTransactionResponse(transaction);
     }
 
 
-    private TransactionResponse mapToResponse(Transaction transaction) {
+    private TransactionResponse mapToTransactionResponse(Transaction transaction) {
+        String receiverName = bankService.getAccountByAccountNumber(transaction.getReceiverAccountNumber()).getName();
         return new TransactionResponse(
-                transaction.getTransactionId(),
-                transaction.getSenderAccountId(),
-                transaction.getReceiverAccountId(),
+                transaction.getTransactionReference(),
                 transaction.getAmount(),
                 transaction.getType(),
                 transaction.getStatus(),
                 transaction.getNote(),
                 transaction.getTimestamp(),
-                transaction.getReceiverAccountNumber()
+                receiverName
         );
     }
 
@@ -136,26 +157,44 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private Transaction createTransaction(
-            BankAccount sender,
-            BankAccount receiver,
+            BankAccount source,
+            BankAccount target,
             BigDecimal amount,
             TransactionType type,
             String note,
-            LocalDateTime timestamp
+            LocalDateTime timestamp,
+            String transactionReference
     ) {
         Transaction transaction = new Transaction();
-        transaction.setSenderAccountId(sender.getId());
-        transaction.setSenderAccountNumber(sender.getAccountNumber());
-        transaction.setReceiverAccountId(receiver.getId());
-        transaction.setReceiverAccountNumber(receiver.getAccountNumber());
+
+        if (type == TransactionType.DEBIT) {
+            transaction.setSenderAccountId(source.getId());
+            transaction.setSenderAccountNumber(source.getAccountNumber());
+            transaction.setReceiverAccountId(target.getId());
+            transaction.setReceiverAccountNumber(target.getAccountNumber());
+        } else {
+            // REVERSED for CREDIT: sender = SYSTEM or peer
+            transaction.setSenderAccountId(target.getId());
+            transaction.setSenderAccountNumber(target.getAccountNumber());
+            transaction.setReceiverAccountId(source.getId());
+            transaction.setReceiverAccountNumber(source.getAccountNumber());
+        }
+
         transaction.setAmount(amount);
         transaction.setType(type);
         transaction.setStatus(TransactionStatus.SUCCESS);
         transaction.setNote(note);
         transaction.setTimestamp(timestamp);
+        transaction.setTransactionReference(transactionReference);
+
         return transaction;
     }
 
+    private String generateTransactionReference() {
+        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String uuidPart = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 12);
+        return datePart + uuidPart;
+    }
 }
 
 

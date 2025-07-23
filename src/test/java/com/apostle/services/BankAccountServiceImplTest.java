@@ -173,7 +173,7 @@ public class BankAccountServiceImplTest {
         authenticateUser(request.getEmail(), token);
 
         AddAccountRequest subAccRequest = new AddAccountRequest();
-        subAccRequest.setName("My Vout Wallet");
+        subAccRequest.setName("janesub");
 
         AddAccountResponse response = bankAccountService.addSubAccountForCurrentUser(subAccRequest);
 

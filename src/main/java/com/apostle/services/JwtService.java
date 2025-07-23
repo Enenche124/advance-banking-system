@@ -38,12 +38,20 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public Claims extractAllClaims(String token){
-        return Jwts.parserBuilder()
+
+    public Claims extractAllClaims(String token) {
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+        if (claims.getExpiration().before(new Date())) {
+            throw new RuntimeException("Token has expired");
+        }
+        if (!"access".equals(claims.get("type", String.class))) {
+            throw new RuntimeException("Invalid token type");
+        }
+        return claims;
     }
 
 }

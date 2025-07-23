@@ -13,6 +13,9 @@ import com.apostle.exceptions.UserNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +59,7 @@ public class BankAccountServiceImpl implements BankAccountService {
                 .accountNumber(accountNumber)
                 .balance(BigDecimal.ZERO)
                 .accountType(accountType)
+                .name(user.getUsername())
                 .user(user)
                 .build();
 
@@ -77,6 +81,7 @@ public class BankAccountServiceImpl implements BankAccountService {
         BankAccount account = new BankAccount();
         account.setName(addAccountRequest.getName());
         account.setUser(user);
+        account.setName(user.getUsername());
         account.setBalance(BigDecimal.ZERO);
         account.setAccountNumber(accountNumber);
 
@@ -93,10 +98,16 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public BalanceResponse getBalance(String  accountNumber) {
         BankAccount account = getAccountByAccountNumber(accountNumber);
-        return new BalanceResponse(account.getAccountNumber(), account.getBalance());    }
+        return new BalanceResponse( account.getBalance());
+    }
 
     @Override
     @Transactional
+    @Retryable(
+            value = {ObjectOptimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public void credit(String  accountNumber, BigDecimal amount) {
         BankAccount account = getAccountByAccountNumber(accountNumber);
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
@@ -108,6 +119,11 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Override
     @Transactional
+    @Retryable(
+            value = {ObjectOptimisticLockingFailureException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2)
+    )
     public void debit(String  accountNumber, BigDecimal amount) {
         BankAccount account = getAccountByAccountNumber(accountNumber);
         if (account.getBalance().compareTo(amount) < 0) {
@@ -116,12 +132,6 @@ public class BankAccountServiceImpl implements BankAccountService {
         account.setBalance(account.getBalance().subtract(amount));
         bankAccountRepository.save(account);
     }
-
-//    @Override
-//    public BankAccount getAccountById(String accountId) {
-//        return bankAccountRepository.findById(accountId)
-//                .orElseThrow(() -> new UserNotFoundException("Account not found"));
-//    }
 
     @Override
     public BankAccount getAccountByAccountNumber(String accountNumber) {

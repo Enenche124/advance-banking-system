@@ -18,7 +18,7 @@ public class Transaction {
 
     @Id
     private String transactionId;
-
+    private String transactionReference;
     private String senderAccountId;
     private String receiverAccountId;
 

@@ -16,14 +16,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-//@ActiveProfiles("dev")
 public class TransactionServiceImplTest {
 
     @Autowired
@@ -77,12 +77,12 @@ public class TransactionServiceImplTest {
 
         BankAccount updatedAccount = bankAccountService.getAccountByAccountNumber(account.getAccountNumber());
 
-        assertEquals(accountNumber, transactionResponse.receiverAccountNumber());
+        assertEquals("deposituser", transactionResponse.receiverName());
         assertEquals(depositAmount, updatedAccount.getBalance());
         assertEquals(TransactionStatus.SUCCESS, transactionResponse.status());
         assertEquals(TransactionType.CREDIT, transactionResponse.type());
         assertEquals("Test deposit", transactionResponse.note());
-        assertNotNull(transactionResponse.transactionId());
+        assertNotNull(transactionResponse.transactionReference());
     }
 
     @Test
@@ -149,8 +149,8 @@ public class TransactionServiceImplTest {
 
         assertEquals(TransactionType.DEBIT, response.type());
         assertEquals(TransactionStatus.SUCCESS, response.status());
-        assertEquals("Transfer to " + receiverAccount.getAccountNumber() + ": Test transfer", response.note());
-        assertEquals(receiverAccount.getAccountNumber(), response.receiverAccountNumber());
+        assertEquals("Transfer to " + "receiveruser" + ": Test transfer", response.note());
+        assertEquals("receiveruser", response.receiverName());
     }
 
     @Test
@@ -221,6 +221,40 @@ public class TransactionServiceImplTest {
         });
 
         assertTrue(exception.getMessage().toLowerCase().contains("insufficient balance"));
+    }
+    @Test
+    public void testGetTransactionsForAccount_returnsAllRelatedTransactions() {
+        RegisterRequest senderRegisterRequest = createRegisterRequest("senderi@gmail.com", "Nicholas_Agbo", "Password@123");
+        authenticationService.register(senderRegisterRequest);
+
+        RegisterRequest receiverRegisterRequest = createRegisterRequest("receiver@gmail.com", "John_Adah", "Password@123");
+        authenticationService.register(receiverRegisterRequest);
+        BankAccount senderAccount = bankAccountRepository.findByUserId(userRepository.findUserByEmail(senderRegisterRequest.getEmail()).get().getId()).get();
+        BankAccount receiverAccount = bankAccountRepository.findByUserId(userRepository.findUserByEmail(receiverRegisterRequest.getEmail()).get().getId()).get();
+
+        transactionService.deposit(new DepositRequest(senderAccount.getAccountNumber(), new BigDecimal("1000"), "Initial deposit"));
+
+        transactionService.transfer(new SendMoneyRequest(
+                senderAccount.getAccountNumber(),
+                receiverAccount.getAccountNumber(),
+                new BigDecimal("600"),
+                "Sending money"
+        ));
+
+        LocalDateTime start = LocalDateTime.now().minusDays(1);
+        LocalDateTime end = LocalDateTime.now().plusDays(1);
+        int page = 0;
+        int size = 10;
+
+        List<TransactionResponse> senderTransactions = transactionService.getTransactionsForAccount(senderAccount.getId(), start, end, page, size);
+        List<TransactionResponse> receiverTransactions = transactionService.getTransactionsForAccount(receiverAccount.getId(), start, end, page, size);
+
+        System.out.println("Sender Transactions: " + senderTransactions);
+        System.out.println("Receiver Transactions: " + receiverTransactions);
+
+        assertEquals(2, senderTransactions.size());
+        assertEquals(1, receiverTransactions.size());
+
     }
 
 }

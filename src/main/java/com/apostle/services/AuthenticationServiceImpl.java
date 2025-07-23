@@ -8,11 +8,14 @@ import com.apostle.dtos.requests.LoginRequest;
 import com.apostle.dtos.requests.RegisterRequest;
 import com.apostle.dtos.responses.LoginResponse;
 import com.apostle.dtos.responses.RegisterResponses;
+import com.apostle.exceptions.EmailNotSentException;
 import com.apostle.exceptions.InvalidLoginException;
 import com.apostle.exceptions.UserAlreadyExistException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -32,11 +35,16 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtService jwtService;
 
+    @Autowired
+    private EmailServiceImpl emailService;
+
     private final BankAccountServiceImpl bankAccountService;
 
     public AuthenticationServiceImpl(Validator validator,
                                      UserRepository userRepository,
-                                     BCryptPasswordEncoder bCryptPasswordEncoder, JwtService jwtService, BankAccountServiceImpl bankAccountService){
+                                     BCryptPasswordEncoder bCryptPasswordEncoder,
+                                     JwtService jwtService,
+                                     BankAccountServiceImpl bankAccountService){
 
         this.validator = validator;
         this.userRepository = userRepository;
@@ -61,8 +69,15 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
         User user = mapToRegisterRequest(registerRequest);
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        String email = user.getEmail().toLowerCase();
         userRepository.save(user);
         BankAccount createdAccount = bankAccountService.createAccountForUser(user, AccountType.SAVINGS);
+        try {
+            emailService.sendAccountNumberEmail(email, createdAccount.getAccountNumber());
+        }catch (Exception ex){
+            userRepository.delete(user);
+            throw new EmailNotSentException("Error sending email");
+        }
         RegisterResponses registerResponses = new RegisterResponses();
         registerResponses.setMessage("User Registration Successful");
         registerResponses.setSuccess(true);
@@ -86,7 +101,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
         String name = optionalUser.get().getUsername();
         User user = optionalUser.get();
-        String token = jwtService.generateJwtToken(optionalUser.get().getEmail(), user.getRole() );
+        String token = jwtService.generateJwtToken(optionalUser.get().getEmail(), user.getRole());
         return new LoginResponse(token, name, "Logged in success", true);
     }
 }

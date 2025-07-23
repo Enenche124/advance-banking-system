@@ -27,15 +27,16 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService{
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final Validator validator;
-    private final EmailService emailService;
+    private final EmailServiceImpl emailService;
     public PasswordRecoveryServiceImpl(UserRepository userRepository,
                                        PasswordResetTokenRepository passwordResetTokenRepository,
                                        BCryptPasswordEncoder bCryptPasswordEncoder,
-                                       Validator validator, EmailService emailService) {
+                                       Validator validator, EmailServiceImpl emailService) {
         this.userRepository = userRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.validator = validator;
+
         this.emailService = emailService;
     }
 

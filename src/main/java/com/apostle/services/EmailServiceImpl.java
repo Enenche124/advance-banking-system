@@ -4,7 +4,6 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class EmailServiceImpl {
-    private JavaMailSender javaMailSender;
+    private final JavaMailSender javaMailSender;
 
     @Value("${spring.mail.username}")
     private String from;
@@ -22,10 +21,7 @@ public class EmailServiceImpl {
     @Value("${app.email.reset-token-expiration-minutes:10}")
     private int resetTokenExpirationMinutes;
 
-//    @Autowired
-    public EmailServiceImpl(JavaMailSender javaMailSender) {
-        this.javaMailSender = javaMailSender;
-    }
+
 
     private static final String REGISTRATION_SUBJECT = "Welcome to Apostle Bank";
     private static final String REGISTRATION_BODY = "Thank you for registering with us. Your account number is: %s%n" +
@@ -49,13 +45,8 @@ public class EmailServiceImpl {
 
     public void sendAccountNumberEmail(String toEmail, String accountNumber) throws MessagingException {
         validateInputs(toEmail, accountNumber);
-        try {
             sendEmail(toEmail, REGISTRATION_SUBJECT, String.format(REGISTRATION_BODY, accountNumber));
-            log.info("Account number email sent successfully to: {}", toEmail);
-        } catch (MessagingException e) {
-            log.error("Failed to send account number email to: {}", toEmail, e);
-            throw new RuntimeException("Failed to send account number email", e);
-        }
+
     }
 
     private void sendEmail(String toEmail, String subject, String body) throws MessagingException {

@@ -11,10 +11,12 @@ import com.apostle.dtos.responses.RegisterResponses;
 import com.apostle.exceptions.EmailNotSentException;
 import com.apostle.exceptions.InvalidLoginException;
 import com.apostle.exceptions.UserAlreadyExistException;
+import jakarta.mail.MessagingException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,31 +30,15 @@ import static com.apostle.utils.Mapper.mapToRegisterRequest;
 
 @Validated
 @Service("authenticationService")
+@RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService{
 
     private final Validator validator;
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final JwtService jwtService;
-
-    @Autowired
-    private EmailServiceImpl emailService;
-
+    private final EmailServiceImpl emailService;
     private final BankAccountServiceImpl bankAccountService;
-
-    public AuthenticationServiceImpl(Validator validator,
-                                     UserRepository userRepository,
-                                     BCryptPasswordEncoder bCryptPasswordEncoder,
-                                     JwtService jwtService,
-                                     BankAccountServiceImpl bankAccountService){
-
-        this.validator = validator;
-        this.userRepository = userRepository;
-        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-        this.jwtService = jwtService;
-        this.bankAccountService = bankAccountService;
-    }
-
 
     @Override
     public RegisterResponses register(RegisterRequest registerRequest) {
@@ -70,14 +56,16 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         User user = mapToRegisterRequest(registerRequest);
         user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
         String email = user.getEmail().toLowerCase();
+        System.out.println("THIS IS EMAIL HERE: "+ email);
         userRepository.save(user);
         BankAccount createdAccount = bankAccountService.createAccountForUser(user, AccountType.SAVINGS);
+
         try {
             emailService.sendAccountNumberEmail(email, createdAccount.getAccountNumber());
-        }catch (Exception ex){
-            userRepository.delete(user);
-            throw new EmailNotSentException("Error sending email");
+        } catch (Exception e) {
+            throw new EmailNotSentException("Email not send" + e);
         }
+
         RegisterResponses registerResponses = new RegisterResponses();
         registerResponses.setMessage("User Registration Successful");
         registerResponses.setSuccess(true);

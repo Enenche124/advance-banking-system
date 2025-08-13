@@ -21,8 +21,6 @@ public class EmailServiceImpl {
     @Value("${app.email.reset-token-expiration-minutes:10}")
     private int resetTokenExpirationMinutes;
 
-
-
     private static final String REGISTRATION_SUBJECT = "Welcome to Apostle Bank";
     private static final String REGISTRATION_BODY = "Thank you for registering with us. Your account number is: %s%n" +
             "This account number will be used for future transactions, please keep it safe.";

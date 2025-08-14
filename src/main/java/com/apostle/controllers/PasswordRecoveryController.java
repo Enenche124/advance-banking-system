@@ -6,6 +6,7 @@ import com.apostle.dtos.requests.ResetPasswordRequest;
 import com.apostle.services.PasswordRecoveryService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/user")
-//@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasRole('CUSTOMER')")
 public class PasswordRecoveryController {
 
     private final PasswordRecoveryService passwordRecoveryService;
@@ -30,7 +31,6 @@ public class PasswordRecoveryController {
             return ResponseEntity.badRequest().body(exception.getMessage());
         }
     }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<?> sendResetToken(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest){
         try {

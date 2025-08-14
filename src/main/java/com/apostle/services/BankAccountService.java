@@ -24,6 +24,6 @@ public interface BankAccountService {
 
 //    BankAccount getAccountById(String accountId);
 
-    BankAccount getAccountByAccountNumber(String accountNumber); // ✅ optional, for reuse
+    BankAccount getAccountByAccountNumber(String accountNumber);
 }
 

@@ -13,6 +13,7 @@ import jakarta.mail.MessagingException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class PasswordRecoveryServiceImpl implements PasswordRecoveryService{
 
     private final UserRepository userRepository;
@@ -28,17 +30,17 @@ public class PasswordRecoveryServiceImpl implements PasswordRecoveryService{
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final Validator validator;
     private final EmailServiceImpl emailService;
-    public PasswordRecoveryServiceImpl(UserRepository userRepository,
-                                       PasswordResetTokenRepository passwordResetTokenRepository,
-                                       BCryptPasswordEncoder bCryptPasswordEncoder,
-                                       Validator validator, EmailServiceImpl emailService) {
-        this.userRepository = userRepository;
-        this.passwordResetTokenRepository = passwordResetTokenRepository;
-        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-        this.validator = validator;
-
-        this.emailService = emailService;
-    }
+//    public PasswordRecoveryServiceImpl(UserRepository userRepository,
+//                                       PasswordResetTokenRepository passwordResetTokenRepository,
+//                                       BCryptPasswordEncoder bCryptPasswordEncoder,
+//                                       Validator validator, EmailServiceImpl emailService) {
+//        this.userRepository = userRepository;
+//        this.passwordResetTokenRepository = passwordResetTokenRepository;
+//        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+//        this.validator = validator;
+//
+//        this.emailService = emailService;
+//    }
 
     @Override
     public void sendResetToken(ForgotPasswordRequest forgotPasswordRequest) {

@@ -173,7 +173,6 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setReceiverAccountId(target.getId());
             transaction.setReceiverAccountNumber(target.getAccountNumber());
         } else {
-            // REVERSED for CREDIT: sender = SYSTEM or peer
             transaction.setSenderAccountId(target.getId());
             transaction.setSenderAccountNumber(target.getAccountNumber());
             transaction.setReceiverAccountId(source.getId());

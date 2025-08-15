@@ -38,6 +38,7 @@ public class UserController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             UserProfileResponse response = new UserProfileResponse(
+                    user.getId(),
                     user.getUsername(),
                     user.getEmail(),
                     user.getProfileImagePath()

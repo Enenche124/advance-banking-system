@@ -1,13 +1,13 @@
 package com.apostle.controllers;
 
-import com.apostle.data.model.User;
 import com.apostle.data.repositories.UserRepository;
-import com.apostle.dtos.responses.UserProfileResponse;
-import com.apostle.services.JwtService;
+import com.apostle.exceptions.UserNotFoundException;
 import com.apostle.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
@@ -17,37 +17,21 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
-    private final JwtService jwtService;
     private final UserRepository userRepository;
 
 
-    @PostMapping("/{userId}/upload-photo")
-    public ResponseEntity<String> uploadProfilePicture(@PathVariable String  userId,
-                                                       @RequestParam("file") MultipartFile file) {
+    @PutMapping(value = "/upload-profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadProfilePicture(
+                                                       @RequestParam("file") MultipartFile file,
+                                                       Authentication authentication
+                                                       ) {
+
+        String userEmail = authentication.getName();
+        String userId = userRepository.findUserByEmail(userEmail)
+                .orElseThrow(()-> new UserNotFoundException("User not found"))
+                .getId();
         String imageUrl = userService.uploadProfilePicture(userId, file);
         return ResponseEntity.ok(imageUrl);
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
-        try {
-            String token = authHeader.replace("Bearer ", "");
-            String email = jwtService.extractAllClaims(token).getSubject();
-
-            User user = userRepository.findUserByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            UserProfileResponse response = new UserProfileResponse(
-                    user.getId(),
-                    user.getUsername(),
-                    user.getEmail(),
-                    user.getProfileImagePath()
-            );
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Invalid or expired token: " + e.getMessage());
-        }
     }
 
 

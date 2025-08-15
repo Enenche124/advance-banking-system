@@ -27,4 +27,9 @@ public class UserServiceImpl implements UserService{
 
         return imageUrl;
     }
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findUserByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
 }

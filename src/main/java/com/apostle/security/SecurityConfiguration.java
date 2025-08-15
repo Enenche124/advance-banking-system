@@ -35,8 +35,8 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
-//                        .requestMatchers("/api/v1/user/**").permitAll()
-//                        .requestMatchers("/api/v1/transactions/**").permitAll()
+                        .requestMatchers("/api/v1/user/forgot-password").permitAll()
+                        .requestMatchers("/api/v1/user/reset-password").permitAll()
                         .requestMatchers("/api/v1/user/**").hasRole("CUSTOMER")
                         .requestMatchers("/api/v1/transactions/**").hasRole("CUSTOMER")
                         .anyRequest().authenticated()
